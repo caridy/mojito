@@ -54,6 +54,7 @@ YUI.add('mojito-deploy-addon', function(Y, NAME) {
 
         /**
          * Declaration of store requirement.
+         * @method setStore
          * @private
          * @param {ResourceStore} rs The resource store instance.
          */
@@ -65,9 +66,9 @@ YUI.add('mojito-deploy-addon', function(Y, NAME) {
             }
         },
 
-
         /**
          * Builds up the browser Mojito runtime.
+         * @method constructMojitoClientRuntime
          * @param {AssetHandler} assetHandler asset handler used to add scripts
          *     to the DOM under construction.
          * @param {object} binderMap information about the binders that will be
@@ -80,10 +81,12 @@ YUI.add('mojito-deploy-addon', function(Y, NAME) {
             var store = this.rs,
                 contextServer = this.ac.context,
                 appConfigServer = store.getAppConfig(contextServer,
-                    'definition'),
+                    'application'),
                 contextClient,
                 appConfigClient,
                 yuiConfig = {},
+                yuiConfigEscaped,
+                yuiConfigStr,
                 yuiModules,
                 loader,
                 yuiCombo,
@@ -96,6 +99,8 @@ YUI.add('mojito-deploy-addon', function(Y, NAME) {
                 id,
                 instances = {},
                 clientConfig = {},
+                clientConfigEscaped,
+                clientConfigStr,
                 usePrecomputed,
                 useOnDemand,
                 initialModuleList,
@@ -108,7 +113,7 @@ YUI.add('mojito-deploy-addon', function(Y, NAME) {
 
             contextClient = Y.mojito.util.copy(contextServer);
             contextClient.runtime = 'client';
-            appConfigClient = store.getAppConfig(contextClient, 'definition');
+            appConfigClient = store.getAppConfig(contextClient, 'application');
             clientConfig.context = contextClient;
 
             if (appConfigClient.yui && appConfigClient.yui.config) {
@@ -290,11 +295,18 @@ YUI.add('mojito-deploy-addon', function(Y, NAME) {
                 initialModuleList = "'mojito-client'";
             }
 
-            initializer = '<script type=\"text/javascript\" >\n' +
-                '    YUI_config = ' + JSON.stringify(yuiConfig) + ';\n' +
+            // Unicode escape the various strings in the config data to help
+            // fight against possible script injection attacks.
+            yuiConfigEscaped = Y.mojito.util.cleanse(yuiConfig);
+            yuiConfigStr = Y.JSON.stringify(yuiConfigEscaped);
+            clientConfigEscaped = Y.mojito.util.cleanse(clientConfig);
+            clientConfigStr = Y.JSON.stringify(clientConfigEscaped);
+
+            initializer = '<script type="text/javascript">\n' +
+                '    YUI_config = ' + yuiConfigStr + ';\n' +
                 '    YUI().use(' + initialModuleList + ', function(Y) {\n' +
                 '    window.YMojito = { client: new Y.mojito.Client(' +
-                JSON.stringify(clientConfig, null, 2) + ') };\n' +
+                clientConfigStr + ') };\n' +
                 '        });\n' +
                 '</script>\n';
 
@@ -328,6 +340,7 @@ YUI.add('mojito-deploy-addon', function(Y, NAME) {
          *
          * Note: A single SCRIPT tag containing all the JS on the pages is
          * slower than many SCRIPT tags (checked on iPad only).
+         * @method getScripts
          * @private
          * @param {bool} embed Should returned scripts be embedded in script
          *     tags.

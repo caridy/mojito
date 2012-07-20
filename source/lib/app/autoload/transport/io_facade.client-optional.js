@@ -47,6 +47,7 @@ YUI.add('io-facade', function(Y) {
 
             /**
              * Executes an io request.
+             * @method execute
              * @param {String} url Url to access.
              * @param {Object} data The data to send.
              * @param {String} method GET or POST.
@@ -100,6 +101,7 @@ YUI.add('io-facade', function(Y) {
 
             /**
              * Simulate a server response
+             * @method _simulateResponse
              * @param {Number} id the id of the transaction.
              * @param {Object} details the details of the response.
              * @param {Boolean} badcookie Optional. If true simulate cookies
@@ -121,9 +123,19 @@ YUI.add('io-facade', function(Y) {
 
             handleResponse: function(id, o, badcookie) {
                 var time = (new Date()) - txTimes[id],
-                    respData = Y.JSON.parse(o.responseText),
+                    respData,
+                    txId,
+                    callback;
+
+                try {
+                    respData = Y.JSON.parse(o.responseText);
                     txId = respData.resps[0].txId,
                     callback = cbs[txId];
+                } catch (e) {
+                    respData = e.message;
+                    txId = null;
+                    callback = null;
+                }
 
                 delete cbs[txId];
                 this.fire('transactionResponse', {

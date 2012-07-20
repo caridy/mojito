@@ -18,8 +18,10 @@ var libpath = require('path'),
     MODE_755 = parseInt('755', 8),
     mkdirP,
     rmdirR,
-    writeWebPagesToFiles;
+    writeWebPagesToFiles,
+    Y = require('yui').YUI({useSync: true}).use('json-parse', 'json-stringify');
 
+Y.applyConfig({useSync: false});
 
 /**
  * The usage string for this command.
@@ -99,7 +101,7 @@ exports.run = function(params, options, callback) {
 
     // TODO:  probably should try to use store to read appConfig
     try {
-        appConfig = JSON.parse(String(fs.readFileSync(libpath.join(store._root,
+        appConfig = Y.JSON.parse(String(fs.readFileSync(libpath.join(store._root,
             'application.json'))));
         appConfig = appConfig[0];
 
@@ -167,7 +169,7 @@ exports.buildhtml5app = function(cmdOptions, store, config, destination,
     store.preload();
 
     appConfig = store.getAppConfig(libqs.parse(cmdOptions.context),
-        'definition');
+        'application');
     tunnelPrefix = appConfig.tunnelPrefix || '/tunnel';
 
     console.log('Building a "' + type + '" of the Mojito application at "' +

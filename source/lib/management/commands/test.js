@@ -19,12 +19,12 @@ var pathlib = require('path'),
 
     MODE_ALL = parseInt('777', 8),
 
-    mojitoPath = pathlib.join(__dirname, '../..'),
+    mojitoPath = pathlib.join(__dirname, '../../..'),
     targetMojitoPath = mojitoPath,
     mojitoTmp = '/tmp/mojitotmp',
     mojitoInstrumentedDir = '/tmp/mojito-lib-inst',
 
-    fwTestsRoot = pathlib.join(targetMojitoPath, 'tests'),
+    fwTestsRoot = pathlib.join(targetMojitoPath, 'lib/tests'),
 
     ResourceStore,
 
@@ -33,9 +33,8 @@ var pathlib = require('path'),
     coverageDir = pathlib.join(resultsDir, 'coverage'),
     coverageFile = pathlib.join(coverageDir, 'coverage.json'),
 
-    YUI = require('yui3').YUI,
-    YUITest = require(pathlib.join(fwTestsRoot,
-        'harness/lib/yuitest/javascript/build/yuitest/yuitest-node')).YUITest,
+    YUI = require('yui').YUI,
+    YUITest = require('yuitest').YUITest,
     TestRunner = YUITest.TestRunner,
 
     testStart,
@@ -53,7 +52,10 @@ var pathlib = require('path'),
     usage,
     options,
     inputOptions,
-    runTests;
+    runTests,
+    Y = require('yui').YUI({useSync: true}).use('json-parse', 'json-stringify');
+
+Y.applyConfig({useSync: false});
 
 // OSX's /tmp directory is a symbolic link to /private/tmp, and we want to use
 // the real directory string
@@ -104,7 +106,7 @@ function collectRunResults(results) {
     if (inputOptions.coverage) {
         str = TestRunner.getCoverage(YUITest.CoverageFormat.JSON);
         try {
-            json = JSON.parse(str);
+            json = Y.JSON.parse(str);
         } catch (e) {
             // not expected to happen very often, so no effort to make it pretty
             console.log('------ERROR------');
@@ -119,12 +121,14 @@ function collectRunResults(results) {
 }
 
 function configureYUI(YUI, store, load) {
-    YUI.GlobalConfig.groups['mojito-fw'] = store.getYuiConfigFw('server', {});
-    YUI.GlobalConfig.groups['mojito-app'] = store.getYuiConfigApp('server', {});
-    YUI.GlobalConfig.groups['mojito-mojits'] = store.getYuiConfigAllMojits(
-        'server',
-        {}
-    );
+    YUI.applyConfig({
+        useSync: true,
+        groups: {
+            'mojito-fw': store.getYuiConfigFw('server', {}),
+            'mojito-app': store.getYuiConfigApp('server', {}),
+            'mojito-mojits': store.getYuiConfigAllMojits('server', {})
+        }
+    });
 }
 
 
@@ -386,7 +390,7 @@ function processResults() {
     consoleTestReport(collectedResults, collectedFailures);
 
     if (inputOptions.coverage) {
-        coverageResult = JSON.stringify(collectedCoverage);
+        coverageResult = Y.JSON.stringify(collectedCoverage);
         fs.writeFileSync(coverageFile, coverageResult, 'utf8');
         utils.log('Creating coverage report...');
         // generate coverage reports in html
@@ -541,14 +545,18 @@ function instrumentDirectory(from, verbose, testType, callback) {
             utils.log('coverage instrumentation finished for ' +
                 mojitoInstrumentedDir);
         }
-        var testsFrom = pathlib.join(realPathFrom, 'tests'),
-            testsTo = pathlib.join(mojitoInstrumentedDir, 'tests'),
-            cfgFrom = pathlib.join(mojitoTmp, 'config.json'),
-            cfgTo = pathlib.join(mojitoInstrumentedDir, 'config.json'),
-            dimFrom = pathlib.join(mojitoTmp, 'dimensions.json'),
-            dimTo = pathlib.join(mojitoInstrumentedDir, 'dimensions.json'),
-            libsFrom = pathlib.join(realPathFrom, 'libs'),
-            libsTo = pathlib.join(mojitoInstrumentedDir, 'libs');
+        var testsFrom = pathlib.join(realPathFrom, 'lib/tests'),
+            testsTo = pathlib.join(mojitoInstrumentedDir, 'lib/tests'),
+            packageFrom = pathlib.join(mojitoTmp, 'package.json'),
+            packageTo = pathlib.join(mojitoInstrumentedDir, 'package.json'),
+            cfgFrom = pathlib.join(mojitoTmp, 'lib/config.json'),
+            cfgTo = pathlib.join(mojitoInstrumentedDir, 'lib/config.json'),
+            dimFrom = pathlib.join(mojitoTmp, 'lib/dimensions.json'),
+            dimTo = pathlib.join(mojitoInstrumentedDir, 'lib/dimensions.json'),
+            libsFrom = pathlib.join(realPathFrom, 'lib/libs'),
+            libsTo = pathlib.join(mojitoInstrumentedDir, 'lib/libs'),
+            nodeModulesFrom = pathlib.join(realPathFrom, 'node_modules'),
+            nodeModulesTo = pathlib.join(mojitoInstrumentedDir, 'node_modules');
         if (verbose) {
             utils.log('stdout: ' + stdout);
             utils.log('stderr: ' + stderr);
@@ -566,8 +574,10 @@ function instrumentDirectory(from, verbose, testType, callback) {
                         ' coverage directory');
                 }
                 // copy remaining non-js files into instrumented directory
+                copyExclude(nodeModulesFrom, nodeModulesTo, [/\.svn/]);
                 copyExclude(libsFrom, libsTo, [/\.svn/]);
                 copyExclude(testsFrom, testsTo, [/\.svn/]);
+                copyFile(packageFrom, packageTo);
                 copyFile(cfgFrom, cfgTo);
                 copyFile(dimFrom, dimTo);
                 callback();
@@ -671,17 +681,19 @@ runTests = function(opts) {
             });
             testConfigs['mojito-test'] = {
                 fullpath: pathlib.join(mojitoPath,
-                    'app/autoload/mojito-test.common.js'),
+                    'lib/app/autoload/mojito-test.common.js'),
                 requires: ['mojito']
             };
             testConfigs.mojito = {
                 fullpath: pathlib.join(mojitoPath,
-                    'app/autoload/mojito.common.js')
+                    'lib/app/autoload/mojito.common.js')
             };
-            YUI.GlobalConfig.groups.mojitTests = { modules: testConfigs };
+            YUI.applyConfig({
+                modules: testConfigs
+            });
         } else {
             ResourceStore = require(pathlib.join(targetMojitoPath,
-                'store.server.js'));
+                'lib/store.server.js'));
             store = new ResourceStore(testPath);
 
             store.preload({}, { env: 'test' });
@@ -767,7 +779,11 @@ runTests = function(opts) {
     };
 
     if (coverage) {
-        if (testType === 'app' || testType === 'mojit') {
+        if (testType === 'mojit') {
+            instrumentDirectory(path, verbose, testType, function() {
+                testRunner(pathlib.join(mojitoInstrumentedDir, 'lib'));
+            });
+        } else if (testType === 'app') {
             instrumentDirectory(path, verbose, testType, function() {
                 testRunner(mojitoInstrumentedDir);
             });
@@ -775,7 +791,7 @@ runTests = function(opts) {
             instrumentDirectory(targetMojitoPath, verbose, testType,
                 function() {
                     targetMojitoPath = mojitoInstrumentedDir;
-                    testRunner(pathlib.join(targetMojitoPath, 'tests'));
+                    testRunner(pathlib.join(targetMojitoPath, 'lib/tests'));
                 });
         }
     } else {

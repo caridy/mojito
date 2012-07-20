@@ -29,6 +29,7 @@ YUI.add('mojito-mu', function(Y, NAME) {
 
         /**
          * Renders the mustache template using the data provided.
+         * @method render
          * @param {object} data The data to render.
          * @param {string} mojitType The name of the mojit type.
          * @param {string} tmpl The name of the template to render.
@@ -69,7 +70,7 @@ YUI.add('mojito-mu', function(Y, NAME) {
 
 
         compiler: function(tmpl) {
-            return JSON.stringify(fs.readFileSync(tmpl, 'utf8'));
+            return Y.JSON.stringify(fs.readFileSync(tmpl, 'utf8'));
         }
     };
 

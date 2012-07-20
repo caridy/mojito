@@ -4,7 +4,7 @@
  * See the accompanying LICENSE file for terms.
  */
 
-    
+
 module.exports = {
 
     version: '2.0.0',
@@ -14,16 +14,16 @@ module.exports = {
     SUBMATCH: /\$\$[a-zA-Z0-9.-_]*\$\$/,
 
     /*
-        * Processes an Object representing a YCB 2.0 Bundle as defined in the spec.
-        *
-        *
-        * @method read
-        * @param {object} bundle
-        * @param {object} context
-        * @param {boolean} validate
-        * @param {boolean} debug
-        * @return {object}
-        */
+     * Processes an Object representing a YCB 2.0 Bundle as defined in the spec.
+     *
+     *
+     * @method read
+     * @param {object} bundle
+     * @param {object} context
+     * @param {boolean} validate
+     * @param {boolean} debug
+     * @return {object}
+     */
     read: function(bundle, context, validate, debug){
 
         var rawConfig, lookupPaths,
@@ -37,9 +37,9 @@ module.exports = {
         lookupPaths = this._getLookupPaths(rawConfig.dimensions, context);
 
         if(debug){
-            console.log(JSON.stringify(context,null,4));
-            console.log(JSON.stringify(rawConfig,null,4));
-            console.log(JSON.stringify(lookupPaths,null,4));
+            console.log(Y.JSON.stringify(context,null,4));
+            console.log(Y.JSON.stringify(rawConfig,null,4));
+            console.log(Y.JSON.stringify(lookupPaths,null,4));
         }
 
         // Now we simply merge each macting settings section we find into the config
@@ -47,7 +47,7 @@ module.exports = {
             if(rawConfig.settings[lookupPaths[path]]){
                 if (debug) {
                     console.log('----USING---- ' + lookupPaths[path]);
-                    console.log(JSON.stringify(rawConfig.settings[lookupPaths[path]],null,4));
+                    console.log(Y.JSON.stringify(rawConfig.settings[lookupPaths[path]],null,4));
                 }
                 config = objectMerge(rawConfig.settings[lookupPaths[path]], config);
             }
@@ -63,16 +63,16 @@ module.exports = {
     },
 
     /*
-        * This is a first pass at hairball of a funciton.
-        * 
-        *
-        * @private
-        * @method _applySubstitutions
-        * @param {object} config
-        * @param {object} base
-        * @param {object} parent
-        * @return void
-        */
+     * This is a first pass at hairball of a funciton.
+     *
+     *
+     * @private
+     * @method _applySubstitutions
+     * @param {object} config
+     * @param {object} base
+     * @param {object} parent
+     * @return void
+     */
     _applySubstitutions: function(config, base, parent){
 
         var key, sub, find, item;
@@ -154,11 +154,11 @@ module.exports = {
     },
 
     /*
-        * @private
-        * @method _processRawBundle
-        * @param {object} bundle
-        * @return {object}
-        */
+     * @private
+     * @method _processRawBundle
+     * @param {object} bundle
+     * @return {object}
+     */
     _processRawBundle: function(bundle){
 
         var pos,
@@ -177,7 +177,7 @@ module.exports = {
             }
             else if(bundle[pos].settings){
                 context = {};
-                
+
                 for(part=0; part<bundle[pos].settings.length; part++){
                     kv = bundle[pos].settings[part].split(':');
                     context[kv[0]] = kv[1];
@@ -189,11 +189,12 @@ module.exports = {
                 key = this._getLookupPath(dimensions, context);
 
                 // Add the section to the settings list with it's full key
+// IMY Bug 5439377 configuration does not accept neither null nor false values?
                 if(!settings[key]){
                     settings[key] = bundle[pos];
                 }
                 else{
-                    throw new Error("The settings group '"+JSON.stringify(context)+"' has already been added.");
+                    throw new Error("The settings group '"+Y.JSON.stringify(context)+"' has already been added.");
                 }
             }
         }
@@ -206,12 +207,12 @@ module.exports = {
     },
 
     /*
-        * @private
-        * @method _getContextPath
-        * @param {object} dimensions A YCB dimension structured object
-        * @param {object} context Key/Value list
-        * @result {string}
-        */
+     * @private
+     * @method _getContextPath
+     * @param {object} dimensions A YCB dimension structured object
+     * @param {object} context Key/Value list
+     * @result {string}
+     */
     _getLookupPaths: function(dimensions, context){
 
         var lookupList = objectToList(this._makeOrderedLookupList(dimensions, context)),
@@ -228,7 +229,7 @@ module.exports = {
         }
 
         function tumble(combination, location){
-            
+
             // If the location is not found return
             if(!combination[location]){
                 return false;
@@ -250,7 +251,7 @@ module.exports = {
 
         do{
             path = [];
-            
+
             for(pos=0; pos<lookupList.length; pos++){
                 path.push(lookupList[pos][combination[pos].current]);
             }
@@ -263,12 +264,12 @@ module.exports = {
     },
 
     /*
-        * @private
-        * @method _getContextPath
-        * @param {object} dimensions A YCB dimension structured object
-        * @param {object} context Key/Value list
-        * @result {string}
-        */
+     * @private
+     * @method _getContextPath
+     * @param {object} dimensions A YCB dimension structured object
+     * @param {object} context Key/Value list
+     * @result {string}
+     */
     _getLookupPath: function(dimensions, context){
 
         var lookupList = this._makeOrderedLookupList(dimensions, context),
@@ -302,12 +303,12 @@ module.exports = {
     },
 
     /*
-        * @private
-        * @method _makeOrderedLookupList
-        * @param {object} dimensions A YCB dimension structured object
-        * @param {object} context Key/Value list
-        * @result {object} list of lists
-        */
+     * @private
+     * @method _makeOrderedLookupList
+     * @param {object} dimensions A YCB dimension structured object
+     * @param {object} context Key/Value list
+     * @result {object} list of lists
+     */
     _makeOrderedLookupList: function(dimensions, context){
 
         var dimensionPaths = this._flattenDimensions(dimensions),
@@ -343,11 +344,11 @@ module.exports = {
     },
 
     /*
-        * @private
-        * @method _flattenDimensions
-        * @param {object} dimensions A YCB dimension structured object
-        * @result {object} k/v map
-        */
+     * @private
+     * @method _flattenDimensions
+     * @param {object} dimensions A YCB dimension structured object
+     * @result {object} k/v map
+     */
     _flattenDimensions: function(dimensions){
 
         var dimensionPaths = {},
@@ -359,19 +360,19 @@ module.exports = {
                     dimensionPaths[name] = this._flattenDimension('', dimensions[pos][name]);
                 }
             }
-        }//console.log(JSON.stringify(dimensionPaths,null,4));
+        }//console.log(Y.JSON.stringify(dimensionPaths,null,4));
 
         return dimensionPaths;
     },
 
     /*
-        * @private
-        * @method _flattenDimension
-        * @param {string} prefix
-        * @param {object} dimension A single YCB dimension structured object
-        * @param {string} build
-        * @result {object} k/v map
-        */
+     * @private
+     * @method _flattenDimension
+     * @param {string} prefix
+     * @param {object} dimension A single YCB dimension structured object
+     * @param {string} build
+     * @result {object} k/v map
+     */
     _flattenDimension: function(prefix, dimension, build){
 
         var key, newPrefix, nextDimension;
@@ -407,7 +408,7 @@ function reverseList(from){
     while(pos){
         to.push(from[--pos]);
     }
-    
+
     return to;
 }
 

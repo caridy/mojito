@@ -4,8 +4,8 @@
  * See the accompanying LICENSE file for terms.
  */
 
-YUI.add('RoutingMojit', function(Y) {
-  Y.mojito.controller = {
+YUI.add('RoutingMojit', function(Y, NAME) {
+  Y.mojito.controllers[NAME] = {
     init: function(config) {
       this.config = config;
     },
@@ -21,7 +21,7 @@ YUI.add('RoutingMojit', function(Y) {
     var methods = "";
     var name=""; 
     var action = ac.action;
-    var path = ac.cookie.req.url;
+    var path = ac.http.getRequest().url;
     if(action==="index" && path==="/"){
       name = ac.app.routes.root_route.name;
       Object.keys(ac.app.routes.root_route.verbs).forEach(function(n) {

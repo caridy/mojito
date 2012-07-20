@@ -27,7 +27,7 @@ var MOJITO_MIDDLEWARE = [
     CORE_MOJITO_MODULES = ['mojito', 'mojito-route-maker'],
 
     MOJITO_INIT = new Date().getTime(),
-    YUI = require('yui3').YUI,
+    YUI = require('yui').YUI,
     serverLog = require('./server-log'),
     requestCounter = 0, // used to scope logs per request
     logger;
@@ -48,19 +48,25 @@ global._mojito = {};
 // This configures YUI with both the Mojito framework and all the
 // YUI modules in the application.
 function configureYUI(YUI, store, load) {
-    var module;
-    YUI.GlobalConfig.groups['mojito-fw'] = store.getYuiConfigFw('server', {});
-    YUI.GlobalConfig.groups['mojito-app'] = store.getYuiConfigApp('server', {});
+    var fw,
+        app,
+        module;
+    fw = store.getYuiConfigFw('server', {});
+    app = store.getYuiConfigApp('server', {});
+    YUI.applyConfig({
+        groups: {
+            'mojito-fw': fw,
+            'mojito-app': app
+        }
+    });
     // also pre-load fw and app modules
-    for (module in YUI.GlobalConfig.groups['mojito-fw'].modules) {
-        if (YUI.GlobalConfig.groups['mojito-fw'].modules.hasOwnProperty(module)
-                ) {
+    for (module in fw.modules) {
+        if (fw.modules.hasOwnProperty(module)) {
             load.push(module);
         }
     }
-    for (module in YUI.GlobalConfig.groups['mojito-app'].modules) {
-        if (YUI.GlobalConfig.groups['mojito-app'].modules.hasOwnProperty(module)
-                ) {
+    for (module in app.modules) {
+        if (app.modules.hasOwnProperty(module)) {
             load.push(module);
         }
     }
@@ -90,6 +96,7 @@ MojitoServer.prototype = {
      * addMojitoToExpressApp().  Otherwise Mojito can create an app for you
      * if you use createServer().
      *
+     * @method addMojitoToExpressApp
      * @param {Object} app Express application.
      * @param {Object} options The directory to start the application in.
      */
@@ -104,6 +111,7 @@ MojitoServer.prototype = {
             middleware,
             m,
             midName,
+            midBase,
             midPath,
             midFactory,
             hasMojito,
@@ -127,7 +135,7 @@ MojitoServer.prototype = {
         app.store = store;
 
         store.preload(options.context, options.appConfig);
-        appConfig = store.getAppConfig(null, 'definition');
+        appConfig = store.getAppConfig(null, 'application');
 
         // TODO: extract function
         if (appConfig.log && appConfig.log.server) {
@@ -175,16 +183,17 @@ MojitoServer.prototype = {
             }
         });
 
-        Y = YUI({ core: CORE_YUI_MODULES });
+        Y = YUI({ core: CORE_YUI_MODULES, useSync: true });
 
         // Load logger early so that we can plug it in before the other loading
         // happens.
-        Y.useSync('mojito-logger');
+        Y.use('mojito-logger');
         // TODO: extract function
         logger = new Y.mojito.Logger(serverLog.options);
         store.setLogger(logger);
 
-        Y.useSync.apply(Y, CORE_MOJITO_MODULES);
+        Y.use.apply(Y, CORE_MOJITO_MODULES);
+        Y.applyConfig({ useSync: false });
 
         loader = new Y.mojito.Loader(appConfig);
 
@@ -286,7 +295,7 @@ MojitoServer.prototype = {
                     // We assume the middleware is a factory function
                     // and pass in the following config object when
                     // calling said function.
-                    // 
+                    //
                     // midConfig = {
                     //    Y: Y,
                     //    store: store,
@@ -300,7 +309,16 @@ MojitoServer.prototype = {
                 // specified by path
                 midPath = libpath.join(options.dir, midName);
                 //console.log("======== MIDDLEWARE user " + midPath);
-                app.use(require(midPath));
+                midBase = libpath.basename(midPath);
+                if (0 === midBase.indexOf('mojito-')) {
+                    // Same as above (case of Mojito's special middlewares)
+                    // Gives a user-provided middleware access to the YUI
+                    // instance, resource store, logger, context, etc.
+                    midFactory = require(midPath);
+                    app.use(midFactory(midConfig));
+                } else {
+                    app.use(require(midPath));
+                }
             }
         }
 
@@ -314,6 +332,7 @@ MojitoServer.prototype = {
     /**
      * Creates an Express application with the Mojito framework already added.
      *
+     * @method createServer
      * @param {Object} options Options for starting the app.
      * @return {Object} Express application.
      */
