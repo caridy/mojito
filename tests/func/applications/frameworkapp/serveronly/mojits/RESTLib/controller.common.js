@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2011 Yahoo! Inc. All rights reserved.
  */
-YUI.add('RESTLib', function(Y) {
+YUI.add('RESTLib', function(Y, NAME) {
 
 /**
  * The RESTLib module.
@@ -15,7 +15,7 @@ YUI.add('RESTLib', function(Y) {
      * @class Controller
      * @constructor
      */
-    Y.mojito.controller = {
+    Y.namespace('mojito.controllers')[NAME] = {
 
         init: function(config) {
             this.config = config;
@@ -314,12 +314,11 @@ YUI.add('RESTLib', function(Y) {
 	        },
 
 	        printPUTParams: function(actionContext){
-	            var project = actionContext.params.getFromUrl("project");
-	            var sprint = actionContext.params.getFromUrl("sprint");
+	            var project = actionContext.params.getFromBody("project");
+	            var sprint = actionContext.params.getFromBody("sprint");
 	            var method = actionContext.http.getRequest().method;
 
-	            //var output = "<p id=\"output\">(METHOD: " + method + ") This is sprint " + sprint + " for the project " + project + "</p>";
-	            var output = "<p id=\"output\">(METHOD: " + method + ")</p>";
+	            var output = "<p id=\"output\">(METHOD: " + method + ") This is sprint " + sprint + " for the project " + project + "</p>";
 	            actionContext.http.setHeader('content-type', 'text/html');
 	            actionContext.done(output);
 	        },
@@ -371,4 +370,4 @@ YUI.add('RESTLib', function(Y) {
 	    	return hostPort;
 	    }
 	
-}, '0.0.1', {requires: ['mojito-http-addon']});
+}, '0.0.1', {requires: ['mojito', 'mojito-http-addon']});
