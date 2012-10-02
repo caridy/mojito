@@ -11,19 +11,21 @@ Dynamically Adding CSS to Different Devices
 Summary
 #######
 
-This example shows how to dynamically include assets (CSS) in the rendered template of a mojit. The 
-assets in this example are included in the rendered default template and device-specific templates.
+This example shows how to dynamically include assets (CSS) in the rendered view template of a mojit. 
+The assets in this example are included in the rendered default view template and 
+device-specific view templates.
 
 The following topics will be covered:
 
 - configuring an application to dynamically include assets
 - using the ``addAssets`` method in the controller to dynamically add assets to both the rendered 
-  default and device-specific templates
+default and device-specific view templates
 
 Implementation Notes
 ####################
 
-The screenshot below shows the rendered iPhone template with dynamically included CSS and JavaScript.
+The screenshot below shows the rendered iPhone view template with dynamically included CSS and 
+JavaScript.
 
 .. image:: images/dynamic_assets.device_specific.preview.gif
    :height: 400px
@@ -32,7 +34,10 @@ The screenshot below shows the rendered iPhone template with dynamically include
 The ``application.json`` in this code example configures Mojito to deploy mojit code to the client 
 and to use the ``HTMLFrameMojit``. To deploy mojit code to the client, you assign ``true`` to the 
 ``deploy`` property as seen in the ``application.json`` below. The ``frame`` instance of 
-``HTMLFrameMojit`` becomes the parent mojit of the ``child`` instance of type ``device``.
+``HTMLFrameMojit`` becomes the parent mojit of the ``child`` instance of type ``device``. The 
+configurations for the context ``"device:iphone"`` define the identifier ``"iphone"`` 
+for file resources with the ``selector`` property, so Mojito will know to use the template
+``index.iphone.hb.html`` if the context is ``"device:iphone"``.
 
 .. code-block:: javascript
 
@@ -43,22 +48,25 @@ and to use the ``HTMLFrameMojit``. To deploy mojit code to the client, you assig
        "specs": {
          "frame" : {
            "type" : "HTMLFrameMojit",
+           "deploy": true,
            "config": {
-             "deploy": true,
              "child" : {
                "type" : "device"
              }
            }
          }
        }
+     },
+     { 
+       "settings": [ "device:iphone" ], 
+       "selector": "iphone" 
      }
    ]
 
 In the controller for the ``device`` mojit, the ``index`` function has to determine what device is 
-making the request and then attach the appropriate meta data and CSS. 
-To determine the calling device, you use the ``ActionContext`` object to access the ``device`` 
-property of the ``context`` object.  Below is a partial ``ActionContext`` object 
-that contains the ``context`` object:
+making the request and then attach the appropriate meta data and CSS. To determine the calling 
+device, you use the ``ActionContext`` object to access the ``device`` property of the ``context`` 
+object. Below is a partial ``ActionContext`` object that contains the ``context`` object:
 
 .. code-block:: javascript
 
@@ -79,8 +87,8 @@ that contains the ``context`` object:
    }
 
 To dynamically add CSS and meta data from the controller, you use methods from the 
-`Assets addon <../../api/classes/Assets.common.html>`_. In the ``controller.server.js`` below, 
-the ``index`` function determines the calling device using the ``context`` object seen above. 
+`Assets addon <../../api/classes/Assets.common.html>`_. In the ``controller.server.js`` below, the 
+``index`` function determines the calling device using the ``context`` object seen above. 
 To add metadata for the iPhone, the ``addBlob`` method is called from the ``Assets`` addon. 
 The appropriate CSS file is dynamically attached to the template with ``ac.assets.addCss``.
 
@@ -118,9 +126,9 @@ The appropriate CSS file is dynamically attached to the template with ``ac.asset
      };
    }, '0.0.1', {requires: []});
 
-The ``index.iphone`` template below contains CSS for controlling the orientation of the page, which 
-is needed for displaying the page correctly on an iPhone. When the template is rendered, 
-the CSS is dynamically added, and the Handlebars expressions are replaced with values. If the device 
+The ``index.iphone`` view template below contains CSS for controlling the orientation of the page, 
+which is needed for displaying the page correctly on an iPhone. When the template is rendered, the 
+CSS is dynamically added, and the Handlebars expressions are replaced with values. If the device 
 making the call is an iPhone, the ``viewport`` meta data will also be added dynamically.
 
 .. code-block:: html
@@ -192,18 +200,22 @@ To create and run ``device_assets``:
           "specs": {
             "frame" : {
               "type" : "HTMLFrameMojit",
-              "config": {
               "deploy": true,
+              "config": {
                 "child" : {
                   "type" : "device"
                 }
               }
             }
           }
+        },
+        { 
+          "settings": [ "device:iphone" ], 
+          "selector": "iphone" 
         }
       ]
 
-#. To configure routing, create the file ``routes.json`` with the following:
+#. To configure routing, replace the contents of the file ``routes.json`` with the following:
 
    .. code-block:: javascript
 
@@ -220,8 +232,8 @@ To create and run ``device_assets``:
 
 #. Change to ``mojits/device``.
 
-#. Modify your controller to dynamically add assets to the rendered template by replacing the code 
-  in ``controller.server.js`` with the following:
+#. Modify your controller to dynamically add assets to the rendered view template by replacing the 
+   code in ``controller.server.js`` with the following:
 
    .. code-block:: javascript
 
@@ -257,8 +269,8 @@ To create and run ``device_assets``:
         };
       }, '0.0.1', {requires: []});
 
-#. To create the default ``index`` template, replace the code in ``views/index.hb.html`` with the 
-   following:
+#. To create the default ``index`` view template, replace the code in ``views/index.hb.html`` with 
+   the following:
 
    .. code-block:: html
 
@@ -285,8 +297,8 @@ To create and run ``device_assets``:
         </body>
       </html>
 
-#. To create the default iPhone template, create the file ``views/index.iphone.hb.html`` with the 
-   following:
+#. To create the default iPhone template, create the file ``views/index.iphone.hb.html`` with 
+   the following:
 
    .. code-block:: html
 

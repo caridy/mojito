@@ -46,7 +46,7 @@ return Flickr photos whose title, description, or tags contain the text "muppet"
 statement to open the YQL Console, and then click the **TEST** button to see the returned XML 
 response.
 
-`select * from flickr.photos.search where text="muppets" and api_key="9cc79c8bf1942c683b0d4e30b838ee9c" <http://developer.yahoo.com/yql/console/#h=select%20*%20from%20flickr.photos.search%20where%20has_geo%3D%22true%22%20and%20text%3D%22san%20francisco%22%20and%20api_key%3D%229cc79c8bf1942c683b0d4e30b838ee9c%22>`_
+`select * from flickr.photos.search where text="muppets" and api_key="84921e87fb8f2fc338c3ff9bf51a412e" <http://developer.yahoo.com/yql/console/#h=select%20*%20from%20flickr.photos.search%20where%20has_geo%3D%22true%22%20and%20text%3D%22san%20francisco%22%20and%20api_key%3D%2284921e87fb8f2fc338c3ff9bf51a412e%22>`_
 
 As you can see from the partial response from YQL below, the photo URIs are not returned, just 
 metadata about the photos. You need to extract metadata and use it to form the 
@@ -95,7 +95,7 @@ function.
 
    YUI.add('flickrModel', function(Y,NAME) {
      // Flickr requires an API key
-     var API_KEY = '9cc79c8bf1942c683b0d4e30b838ee9c';
+     var API_KEY = '84921e87fb8f2fc338c3ff9bf51a412e';
      Y.mojito.models.flickr = {
        init: function(config) {
          this.config = config;
@@ -332,6 +332,42 @@ To set up and run ``model_yql``:
 
 #. Modify the mojit controller to get data from the model by replacing the code in 
    ``controller.server.js`` with the following:
+
+   .. code-block:: javascript
+   
+      YUI.add('flickr', function(Y, NAME) {
+
+        Y.namespace('mojito.controllers')[NAME] = {
+          init: function(config) {
+            this.config = config;
+          },  
+          index: function(ac) {
+            // Use aliases to params addon
+            // if they exist.
+            if(ac.params.hasOwnProperty('url')){
+              var q =ac.params.url('q') || 'muppet',
+	          page = (ac.params.url('page') || 0) /1,
+	          count = (ac.params.url('size') || 20) /1;
+            }else{
+              var q =ac.params.getFromUrl('q') || 'muppet',
+              page = (ac.params.getFromUrl('page') || 0) / 1,
+              count = (ac.params.getFromUrl('count') || 20) / 1;
+            }
+            var start = page * count;
+            var model = ac.models.flickr;
+            model.search (q, start, count, function(photos) {
+              ac.done (
+                {
+                  photos: photos,
+                  page: page,
+                  count: count,
+                  start: start
+                }
+              );
+            });
+          }
+        };
+      }, '0.0.1', {requires: []});
 
 #. Create the file ``assets/index.css`` for the application's CSS with the following:
 
