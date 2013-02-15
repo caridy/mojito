@@ -426,14 +426,16 @@ Mojito by default will use the configurations below to load the YUI modules ``yu
              "yui-base",
              "loader-base",
              "loader-yui3",
-             "loader-app"
+             "loader-app",
+             "loader-app-base{langPath}"
            ]
          }
        }
      }
    ]
 
-.. note:: The ``loader-base`` module is a :ref:`synthetic module <seed_configure-synthetic>`
+.. note:: The ``loader-app`` and ``loader-app-base{langPath}`` modules are
+          :ref:`synthetic module <seed_configure-synthetic>`
           that loads the information and organizes the Mojito code and modules that your 
           application needs, but does not load YUI or affect the loading of YUI.
 
@@ -447,7 +449,7 @@ YUI version bundled with Mojito by adding the module names to the ``yui.config.s
 array.
 
 The example ``application.json`` below configures Mojito to load the YUI
-modules ``cache-base`` and ``io-base`` as well as the default modules. 
+modules ``json-parse`` and ``json-stringify`` as well as the default modules. 
 Remember though, when you load additional modules, you are increasing the size
 of the seed file and may negatively impact performance. 
 
@@ -462,15 +464,18 @@ of the seed file and may negatively impact performance.
              "yui-base",
              "loader-base",
              "loader-yui3",
-             "cache-base",
-             "io-base",
-             "loader-app"
+             "json-parse",
+             "json-stringify",
+             "loader-app",
+             "loader-app-base{langPath}"
            ]
          }
        }
      }
    ]
 
+Note: modules in ``seed`` array will not be expanded, which means that their dependencies will
+not be automatically included until they are used by your application code.
 
 .. _serving_to_app-yui_cdn:
 
@@ -494,7 +499,8 @@ Cons
 ####
 
 - Your application will need to make separate HTTP requests to get YUI from the YUI CDN in
-  addition to loading any YUI modules from the YUI that comes bundled with Mojito.
+  addition to loading ``loader-app`` and ``loader-app-base{langPath}`` from mojito directly
+  to get the application ready.
 
 .. _yui_cdn-ex:  
 
@@ -504,7 +510,7 @@ Example
 In the example ``application.json`` below, the ``seed`` array includes the ``yui-base`` 
 module from the YUI bundled with Mojito and the ``loader-base`` and ``loader-yui3`` modules
 from the YUI CDN. To serve the YUI modules in the seed, your application will have
-to make three HTTP requests, something you should consider when choosing to get
+to make two HTTP requests, something you should consider when choosing to get
 modules from the YUI CDN. 
 
 .. code-block:: javascript
@@ -515,9 +521,7 @@ modules from the YUI CDN.
        "yui": {
          "config": {
            "seed": [
-             "yui-base",
-             "http://yui.yahooapis.com/3.8.1/build/loader-base/loader-base-min.js",
-             "http://yui.yahooapis.com/3.8.1/build/loader-yui3/loader-yui3-min.js",
+             "http://yui.yahooapis.com/combo?3.8.1/yui-base/yui-base-min.js&3.8.1/loader-base/loader-base-min.js&3.8.1/loader-yui3/loader-yui3-min.js",
              "loader-app",
              "loader-app-base{langPath}"
            ]
